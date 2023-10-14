@@ -1,5 +1,8 @@
+import { readFileSync } from 'fs'
 import * as core from '@actions/core'
-import { wait } from './wait'
+import { exec } from '@actions/exec'
+
+const parser = require('libpg-query');
 
 /**
  * The main function for the action.
@@ -7,20 +10,52 @@ import { wait } from './wait'
  */
 export async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
+    if (!process.env.GITHUB_BASE_REF) {
+      throw new Error("this action can only be triggered using a pull_request");
+    }
 
-    // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-    core.debug(`Waiting ${ms} milliseconds ...`)
+    const filesRaw: string = core.getInput('files', {required: true});
+    core.debug("filesRaw: " + filesRaw)
 
-    // Log the current timestamp, wait, then log the new timestamp
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
+    const filePaths: string[] = JSON.parse(filesRaw);
 
-    // Set outputs for other workflow steps to use
-    core.setOutput('time', new Date().toTimeString())
+    for (const path of filePaths) {
+      const oldFile = await getOldFileContent(path);
+      const oldFP = await parser.fingerprint(oldFile);
+      core.debug(path + "[old]: " + oldFP);
+
+      const newFile = readFileSync(path);
+      const newFP = await parser.fingerprint(newFile);
+      core.debug(path + "[new]: " + newFP);
+      
+      if (newFP !== oldFP) {
+        throw new Error(path + " has changed!");
+      }
+    }
+
   } catch (error) {
-    // Fail the workflow run if an error occurs
     if (error instanceof Error) core.setFailed(error.message)
   }
+}
+
+async function getOldFileContent(path: string): Promise<string> {
+  let oldFile = '';
+  let stdErr = '';
+  const command = `git show "${process.env.GITHUB_BASE_REF}:${path}"`;
+  const options = {
+    listeners: {
+      stdout: (data: Buffer) => {
+        oldFile += data.toString();
+      },
+      stderr: (data: Buffer) => {
+        stdErr += data.toString();
+      }
+    }
+  }
+
+  if (await exec(command, undefined, options) !== 0) {
+    throw new Error("could not exec " + command, {cause: stdErr});
+  }
+
+  return oldFile;
 }

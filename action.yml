@@ -1,18 +1,12 @@
-name: 'The name of your action here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: pg-fingerprint-action
+description: Given a list of sql files, checks if their AST's fingerprints remain unchanged in a PR. For internal use.
+author: helpwave
 
 # Define your inputs here.
 inputs:
-  milliseconds:
-    description: 'Your input description here'
+  files:
+    description: 'Which files to check. A JSON string array.'
     required: true
-    default: '1000'
-
-# Define your outputs here.
-outputs:
-  time:
-    description: 'Your output description here'
 
 runs:
   using: node20
