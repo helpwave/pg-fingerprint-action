@@ -12,13 +12,14 @@
   },
   "scripts": {
     "bundle": "npm run format:write && npm run package",
-    "ci-test": "jest",
+    "prepare-test": "rm -rf __tests__/sample-repo && unzip __tests__/sample-repo.zip && mv sample-repo __tests__/.",
+    "ci-test": "npm run prepare-test && jest",
     "format:write": "prettier --write **/*.ts",
     "format:check": "prettier --check **/*.ts",
     "lint": "npx eslint . -c ./.github/linters/.eslintrc.yml",
     "package": "ncc build src/index.ts --license licenses.txt",
     "package:watch": "npm run package -- --watch",
-    "test": "rm -rf __tests__/sample-repo && unzip __tests__/sample-repo.zip && mv sample-repo __tests__/. && (jest && make-coverage-badge --output-path ./badges/coverage.svg) || make-coverage-badge --output-path ./badges/coverage.svg",
+    "test": "npm run prepare-test && (jest && make-coverage-badge --output-path ./badges/coverage.svg) || make-coverage-badge --output-path ./badges/coverage.svg",
     "all": "npm run format:write && npm run lint && npm run test && npm run package"
   },
   "license": "MIT",
