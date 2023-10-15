@@ -12,6 +12,7 @@ import * as main from '../src/main'
 // Mock the GitHub Actions core library
 const getInputMock = jest.spyOn(core, 'getInput')
 const setFailedMock = jest.spyOn(core, 'setFailed')
+setFailedMock.mockImplementation(() => {})
 
 const runSpy = jest.spyOn(main, 'run')
 
