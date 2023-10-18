@@ -102,5 +102,3 @@ __tests__/runner/*
 .vscode
 *.code-workspace
 
-__tests__/sample-repo
-

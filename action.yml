@@ -4,6 +4,9 @@ author: helpwave
 
 # Define your inputs here.
 inputs:
+  github_token:
+    description: Github Token with read access to the repo
+    required: true
   files:
     description: 'Which files to check. A JSON string array.'
     required: true
