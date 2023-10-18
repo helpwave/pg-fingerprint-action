@@ -31,9 +31,16 @@ getOctokitMock.mockImplementation(() => fakeOctokit as any)
 const runSpy = jest.spyOn(main, 'run')
 
 describe('action', () => {
-  beforeAll(() => {
-    process.chdir('./__tests__/sample-repo')
-  })
+  function inputs(name: string): string {
+    switch (name) {
+      case 'github_token':
+        return 'this_is_not_a_token'
+      case 'root':
+        return './__tests__/sample-repo'
+      default:
+        return ''
+    }
+  }
 
   beforeEach(() => {
     process.env.GITHUB_REPOSITORY = 'thisrepo/doesnot-exist'
@@ -57,10 +64,8 @@ describe('action', () => {
       switch (name) {
         case 'files':
           return '["file.sql"]'
-        case 'github_token':
-          return 'this_is_not_a_token'
         default:
-          return ''
+          return inputs(name)
       }
     })
     await main.run()
@@ -75,13 +80,15 @@ describe('action', () => {
         case 'files':
           return '["file.sql", "error.sql"]'
         default:
-          return ''
+          return inputs(name)
       }
     })
 
     await main.run()
 
     expect(runSpy).toHaveReturned()
-    expect(setFailedMock).toHaveBeenCalledWith('error.sql has changed!')
+    expect(setFailedMock).toHaveBeenCalledWith(
+      '__tests__/sample-repo/error.sql has changed!'
+    )
   })
 })

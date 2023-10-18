@@ -3,6 +3,7 @@ import * as core from '@actions/core'
 import { GitHub } from '@actions/github/lib/utils'
 import { getOctokit, context } from '@actions/github'
 import * as parser from 'libpg-query'
+import { join } from 'path'
 
 /**
  * The main function for the action.
@@ -15,12 +16,19 @@ export async function run(): Promise<void> {
     }
 
     const gh_token = core.getInput('github_token')
+    if (!gh_token) {
+      throw new Error('no github_token provided!')
+    }
     const octokit = getOctokit(gh_token)
+
+    const root = core.getInput('root') || '.'
+    core.debug(`root: ${root}`)
 
     const filesRaw: string = core.getInput('files', { required: true })
     core.debug(`filesRaw: ${filesRaw}`)
 
-    const filePaths: string[] = JSON.parse(filesRaw)
+    const filePaths: string[] = parseFiles(root, filesRaw)
+    core.debug(`filePaths: ${filePaths}`)
 
     for (const path of filePaths) {
       const oldFile = await getOldFileContent(octokit, path)
@@ -67,4 +75,9 @@ async function getOldFileContent(
   }
 
   return Buffer.from(data.content, 'base64').toString('utf8')
+}
+
+function parseFiles(root: string, filesRaw: string): string[] {
+  const arr = JSON.parse(filesRaw)
+  return arr.map((p: string) => join(root, p))
 }

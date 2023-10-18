@@ -29814,6 +29814,7 @@ const fs_1 = __nccwpck_require__(7147);
 const core = __importStar(__nccwpck_require__(2186));
 const github_1 = __nccwpck_require__(5438);
 const parser = __importStar(__nccwpck_require__(462));
+const path_1 = __nccwpck_require__(1017);
 /**
  * The main function for the action.
  * @returns {Promise<void>} Resolves when the action is complete.
@@ -29824,10 +29825,16 @@ async function run() {
             throw new Error('this action can only be triggered using a pull_request');
         }
         const gh_token = core.getInput('github_token');
+        if (!gh_token) {
+            throw new Error('no github_token provided!');
+        }
         const octokit = (0, github_1.getOctokit)(gh_token);
+        const root = core.getInput('root') || '.';
+        core.debug(`root: ${root}`);
         const filesRaw = core.getInput('files', { required: true });
         core.debug(`filesRaw: ${filesRaw}`);
-        const filePaths = JSON.parse(filesRaw);
+        const filePaths = parseFiles(root, filesRaw);
+        core.debug(`filePaths: ${filePaths}`);
         for (const path of filePaths) {
             const oldFile = await getOldFileContent(octokit, path);
             core.debug(`${path}[old]: ${oldFile}`);
@@ -29865,6 +29872,10 @@ async function getOldFileContent(octokit, path) {
         throw new Error(`was not a file: ${path} on ${ref}`);
     }
     return Buffer.from(data.content, 'base64').toString('utf8');
+}
+function parseFiles(root, filesRaw) {
+    const arr = JSON.parse(filesRaw);
+    return arr.map((p) => (0, path_1.join)(root, p));
 }
 
 
